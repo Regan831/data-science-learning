@@ -34,7 +34,7 @@ attribute #11.
 Class Distribution: 
     --    edible: 4208 (51.8%)
     -- poisonous: 3916 (48.2%)
-    --     total: 8124 instances
+    --     total: 8124 instances"""
 
 import pandas as pd
 import numpy as np
@@ -98,6 +98,6 @@ def calc_IG(df):
     for each in cols[1:]:
         unique_attr = df[each].unique()
         for temp in unique_attr:
-            temp_df = df.query("@dog == @temp")
+            temp_df = df.query("@each == @temp")
             #print temp_df
 calc_IG(shrooms)
