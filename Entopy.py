@@ -91,13 +91,21 @@ cols = shrooms.columns
 cols = cols.map(lambda x: x.replace(' ', '_') if isinstance(x, (str, unicode)) else x)
 shrooms.columns = cols
 
+#cap-shape: bell=b,conical=c,convex=x,flat=f, knobbed=k,sunken=s 
 #First calculate the entropy for all children
 
 def calc_IG(df):
+    #Get column names
     cols = df.columns
+    #Iterate through all except for the poisonous column
     for each in cols[1:]:
-        unique_attr = df[each].unique()
+        unique_attr = df[each].unique()    #Extracts all unique values in the column
+        count = 0
         for temp in unique_attr:
-            temp_df = df.query("@each == @temp")
-            #print temp_df
+            print each+" "+temp
+            total = df[df[each] == temp].shape[0]
+            neg = df[(df[each] == temp) & (df.Poisonous == 'p')].shape[0]
+            pos = df[(df[each] == temp) & (df.Poisonous == 'e')].shape[0]
+            ent = calc_entropy(pos,neg)
+            print "Entropy for "+each+" "+temp+": "+str(ent)
 calc_IG(shrooms)
