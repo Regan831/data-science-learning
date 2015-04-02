@@ -94,18 +94,38 @@ shrooms.columns = cols
 #cap-shape: bell=b,conical=c,convex=x,flat=f, knobbed=k,sunken=s 
 #First calculate the entropy for all children
 
-def calc_IG(df):
-    #Get column names
-    cols = df.columns
-    #Iterate through all except for the poisonous column
-    for each in cols[1:]:
-        unique_attr = df[each].unique()    #Extracts all unique values in the column
-        count = 0
-        for temp in unique_attr:
-            print each+" "+temp
-            total = df[df[each] == temp].shape[0]
-            neg = df[(df[each] == temp) & (df.Poisonous == 'p')].shape[0]
-            pos = df[(df[each] == temp) & (df.Poisonous == 'e')].shape[0]
+"""To acquire the info gain, first calculate the entropy for all children. This function does just that and returns the entropy
+of all children in the form of a sorted dataframe.
+
+params: df is the parent dataframe
+retruns: sorted dataframe"""
+
+def calc_children_entropy(df,pos):
+    pos_count = 0
+    neg_count = 0
+    result_s = df.ix[:,0]      #Get first column to calculate parent entropy
+    
+    for each in result_s:      #Iterate through series
+        if each == pos:        #If the value is equal to the pos value add to pos. Else add to neg.
+            pos_count += 1
+        else:
+            neg_count += 1
+    parent_ent = calc_entropy(pos_count,neg_count)
+    
+    cols = df.columns                      #Get column names
+    for col in cols[1:]:                  #Iterate through all except for the poisonous column
+        ent_list = []
+        unique_attr = df[col].unique()    #Extracts all unique values in the column
+        for attr in unique_attr:
+            #print each+" "+temp
+            subset = df[df[col] == attr].shape[0]                          #Shape returns the shape of the df matrix (x,23)
+            neg = df[(df[col] == attr) & (df.Poisonous == 'p')].shape[0]  #Will eventually have to un-hardcode this.
+            pos = df[(df[col] == attr) & (df.Poisonous == 'e')].shape[0]  #Should loop through for all possible prediction values.
             ent = calc_entropy(pos,neg)
-            print "Entropy for "+each+" "+temp+": "+str(ent)
-calc_IG(shrooms)
+            if np.isnan(ent):               #If entropy is NaN change entropy to 0 because that means all are either pos or neg.
+                ent = 0                     #Log of 0 is undefined.
+            ent_list.append(ent)
+            #print "Entropy for "+each+" "+temp+": "+str(ent)
+        for each in ent_list:
+            continue
+calc_children_entropy(shrooms,'p')
