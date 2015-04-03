@@ -150,3 +150,20 @@ def calc_children_entropy(df,pos_str):
     return ret_df.sort("IG",ascending = False)
 df = calc_children_entropy(shrooms,'p')
 print df
+
+#Test to see if this worked. I'll test odor.
+uniques = shrooms['Odor'].unique()
+parent_entropy = calc_entropy(edible,poisonous)
+total = 8124
+for each in uniques:
+    tot = shrooms[shrooms.Odor == each].shape[0]
+    neg = shrooms[(shrooms.Odor == each) & (shrooms.Poisonous == 'p')].shape[0]
+    pos = shrooms[(shrooms.Odor == each) & (shrooms.Poisonous == 'e')].shape[0]
+    print "weight pos: ",float(pos)/float(tot)
+    print "ent: ",calc_entropy(pos,neg)
+    weight = float(tot)/float(total)
+    ent = calc_entropy(pos,neg)
+    if np.isnan(ent):
+        ent = 0
+    parent_entropy = parent_entropy - (weight * ent)
+print parent_entropy
