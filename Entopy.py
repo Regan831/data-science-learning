@@ -100,16 +100,12 @@ def simplify_data(df,parent_ent):
         ents = df[df["Subset"] == each]["Entropy"].values
         for i in range(0, len(weights)):
             ent = ent + (weights[i] * ents[i])
-        print parent_ent - ent
+        IG = IG.append(pd.Series([each,parent_ent - ent], index = ["Subset","IG"]),ignore_index = True)
+    return IG
 
 #cap-shape: bell=b,conical=c,convex=x,flat=f, knobbed=k,sunken=s 
 #First calculate the entropy for all children
 
-"""To acquire the info gain, first calculate the entropy for all children. This function does just that and returns the entropy
-of all children in the form of a sorted dataframe.
-
-params: df is the parent dataframe
-retruns: sorted dataframe"""
 
 """To acquire the info gain, first calculate the entropy for all children. This function does just that and returns the entropy
 of all children in the form of a sorted dataframe.
@@ -117,7 +113,7 @@ of all children in the form of a sorted dataframe.
 params: df is the parent dataframe
 retruns: sorted dataframe"""
 
-def calc_children_entropy(df,pos):
+def calc_children_entropy(df,pos_str):
     ret_df = pd.DataFrame(columns = ["Subset","Weight","Entropy"])
 
     pos_count = 0
@@ -125,7 +121,7 @@ def calc_children_entropy(df,pos):
     result_s = df.ix[:,0]      #Get first column to calculate parent entropy
     
     for each in result_s:      #Iterate through series
-        if each == pos:        #If the value is equal to the pos value add to pos. Else add to neg.
+        if each == pos_str:        #If the value is equal to the pos value add to pos. Else add to neg.
             pos_count += 1
         else:
             neg_count += 1
@@ -133,15 +129,16 @@ def calc_children_entropy(df,pos):
     parent_ent = calc_entropy(pos_count,neg_count)
     
     cols = df.columns                      #Get column names
+    result_col = cols[0]                   #Get the first column. The column being predicted.
+    
     for col in cols[1:]:                  #Iterate through all except for the poisonous column
-        #ent_dict = {}                     #Dictionary to hold all entropies for each column name
         temp_list = []                   #Temporary list to put all entropies for each column in one place. Then put into ent_dict
         unique_attr = df[col].unique()    #Extracts all unique values in the column
         for attr in unique_attr:
             #print each+" "+temp
             subset = df[df[col] == attr].shape[0]                          #Shape returns the shape of the df matrix (x,23)
-            neg = df[(df[col] == attr) & (df.Poisonous == 'p')].shape[0]  #Will eventually have to un-hardcode this.
-            pos = df[(df[col] == attr) & (df.Poisonous == 'e')].shape[0]  #Should loop through for all possible prediction values.
+            neg = df[(df[col] == attr) & (df[result_col] != pos_str)].shape[0]  #Will eventually have to un-hardcode this.
+            pos = df[(df[col] == attr) & (df[result_col] == pos_str)].shape[0]  #Should loop through for all possible prediction values.
             ent = calc_entropy(pos,neg)
             if np.isnan(ent):               #If entropy is NaN change entropy to 0 because that means all are either pos or neg.
                 ent = 0                     #Log of 0 is undefined.
@@ -149,5 +146,7 @@ def calc_children_entropy(df,pos):
             #That was the ugliest line of code I've ever wrote. Shit. Dont know how to do it any other way. It adds the list to the
             #Dataframe with the correct 
     
-    simplify_data(ret_df,parent_ent)
-calc_children_entropy(shrooms,'p')
+    ret_df = simplify_data(ret_df,parent_ent)
+    return ret_df.sort("IG",ascending = False)
+df = calc_children_entropy(shrooms,'p')
+print df
